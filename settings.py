@@ -9,10 +9,11 @@ class Files:
     RAW_MEALS_FILENAME = 'Meals.csv'
 
     PROCESSED_DATA_DIR_NAME = 'processed'
-    PROCESSED_DATASET_X_FILENAME = 'ProcessedDatasetX.csv'
+    PROCESSED_DATASET_X_FILENAME = 'ProcessedX.csv'
+    PROCESSED_DATASET_GLUCOSE_FILENAME = 'ProcessedGlucoseValues.csv'
+    PROCESSED_DATASET_MEALS_FILENAME = 'ProcessedMeals.csv'
 
     CHECKPOINTS_DIR_NAME = 'checkpoints'
-
 
 
 class DataStructure:
@@ -25,6 +26,7 @@ class DataStructure:
 class DataStructureGlucose(DataStructure):
     SAMPLING_INTERVAL_IN_MINUTES = 15
     GLUCOSE_VALUE_HEADER = 'GlucoseValue'
+    GLUCOSE_CORRELATED_FEATURES = ['weight', 'carbohydrate_g', 'energy_kcal', 'totallipid_g']
 
 
 class DataStructureMeals(DataStructure):
@@ -34,10 +36,10 @@ class DataStructureMeals(DataStructure):
 # class DataStructureX(DataStructureGlucose, DataStructureMeals):
 #     pass
 
+
 class NN:
     MODEL = tf.keras.models.Sequential([
-        #FIXME: input_shape[1]?
-        tf.keras.layers.LSTM(32, return_sequences=True, input_shape=(49, 6)),
+        tf.keras.layers.LSTM(32, return_sequences=True, input_shape=(49, 7)),
         tf.keras.layers.LSTM(16, activation='relu'),
         tf.keras.layers.Dense(8)
     ])
@@ -45,10 +47,12 @@ class NN:
     LOSS = 'mse'
 
 
-class TrainConfiguration:
+class TrainingConfiguration:
     BATCH_SIZE = 256
     TRAIN_SPLIT = 690000
     STEP = 1
     BUFFER_SIZE = 1000
     EVALUATION_INTERVAL = 200
-    NUM_OF_EPOCHS = 500
+    VALIDATION_STEPS = 50
+    NUM_OF_EPOCHS = 1
+    CROSS_VALIDATION_NUM_OF_FOLDS = 3
