@@ -368,39 +368,39 @@ class Trainer:
         plt.show()
 
 
-class _Loss:
-    def __init__(self, y_true: pd.DataFrame, y_pred: pd.DataFrame):
-        self._y_true = y_true
-        self._y_pred = y_pred
-
-    def get(self):
-        pass
-
-
-class LossPearson(_Loss):
-    def __init__(self, y_true: pd.DataFrame, y_pred: pd.DataFrame) -> None:
-        super().__init__(y_true, y_pred)
-
-    def get(self) -> float:
-        # making sure y_true and y_pred are of the same size
-        assert self._y_true.shape == self._y_pred.shape
-        # making sure y_true and y_pred share the same exact indeces and index names
-        assert (self._y_true.index == self._y_pred.index).all() and self._y_true.index.names == self._y_pred.index.names
-        # making sure that individual_index_name is a part of the index of both dataframes
-        assert settings.DataStructure.ID_HEADER in self._y_true.index.names \
-               and settings.DataStructure.ID_HEADER in self._y_pred.index.names
-
-        # concat data frames
-        joined_df = pd.concat((self._y_true, self._y_pred), axis=1)
-        return joined_df.groupby(settings.DataStructure.ID_HEADER)\
-                        .apply(lambda x: stats.pearsonr(x.iloc[:, :settings.Challenge.NUM_OF_FUTURE_TIMEPOINTS]\
-                                                         .values\
-                                                         .ravel(),
-                                                        x.iloc[:, settings.Challenge.NUM_OF_FUTURE_TIMEPOINTS:]\
-                                                         .values\
-                                                         .ravel()
-                                                        )[0])\
-                        .mean()
+# class _Loss:
+#     def __init__(self, y_true: pd.DataFrame, y_pred: pd.DataFrame):
+#         self._y_true = y_true
+#         self._y_pred = y_pred
+#
+#     def get(self):
+#         pass
+#
+#
+# class LossPearson(_Loss):
+#     def __init__(self, y_true: pd.DataFrame, y_pred: pd.DataFrame) -> None:
+#         super().__init__(y_true, y_pred)
+#
+#     def get(self) -> float:
+#         # making sure y_true and y_pred are of the same size
+#         assert self._y_true.shape == self._y_pred.shape
+#         # making sure y_true and y_pred share the same exact indeces and index names
+#         assert (self._y_true.index == self._y_pred.index).all() and self._y_true.index.names == self._y_pred.index.names
+#         # making sure that individual_index_name is a part of the index of both dataframes
+#         assert settings.DataStructure.ID_HEADER in self._y_true.index.names \
+#                and settings.DataStructure.ID_HEADER in self._y_pred.index.names
+#
+#         # concat data frames
+#         joined_df = pd.concat((self._y_true, self._y_pred), axis=1)
+#         return joined_df.groupby(settings.DataStructure.ID_HEADER)\
+#                         .apply(lambda x: stats.pearsonr(x.iloc[:, :settings.Challenge.NUM_OF_FUTURE_TIMEPOINTS]\
+#                                                          .values\
+#                                                          .ravel(),
+#                                                         x.iloc[:, settings.Challenge.NUM_OF_FUTURE_TIMEPOINTS:]\
+#                                                          .values\
+#                                                          .ravel()
+#                                                         )[0])\
+#                         .mean()
 
 
 # class _Plotter:
