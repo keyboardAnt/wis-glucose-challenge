@@ -16,7 +16,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from scipy import stats
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import KFold
 from typing import List, Tuple, Sequence, Type, Optional
 import os
 import datetime
@@ -75,21 +75,6 @@ class DataCleanerMeals(_DataCleaner):
         self._df = self._df.groupby(indices).sum()
 
 
-# class DataCleanerX(_DataCleaner):
-#     def __init__(self, df: pd.DataFrame) -> None:
-#         super().__init__(df)
-#         self._dropna()
-#
-#     def _dropna(self):
-#         self._df.dropna()
-#
-#     def _remove_outliers(self) -> None:
-#         pass
-#
-#     def _remove_duplicates(self) -> None:
-#         pass
-
-
 class _DataEnricher:
     def __init__(self, df: pd.DataFrame) -> None:
         self._df = df
@@ -138,25 +123,6 @@ class DataEnricherX(_DataEnricher):
         self._df['sin_time'] = (np.sin(f) / MINUTES_IN_A_DAY).values
         self._df['cos_time'] = (np.cos(f) / MINUTES_IN_A_DAY).values
 
-    # @staticmethod
-    # def _enrich_with_future_timepoints(df: pd.DataFrame,
-    #                                    n_future_time_points: int = 8,
-    #                                    timepoints_resolution_in_minutes: int = 15) -> pd.DataFrame:
-    #     """
-    #     Extracting the m next time points (difference from time zero)
-    #     :param n_future_time_points: number of future time points
-    #     :return:
-    #     """
-    #     for i, g in enumerate(range(timepoints_resolution_in_minutes,
-    #                                 timepoints_resolution_in_minutes * (n_future_time_points + 1),
-    #                                 timepoints_resolution_in_minutes),
-    #                           1):
-    #         new_header = f'{settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER} difference +%0.1dmin' % g
-    #         df[new_header] = \
-    #             df[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER].shift(-i) \
-    #             - df[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER]
-    #     return df.dropna(how='any', axis=0).drop(settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER, axis=1)
-
 
 class _DataProcessor:
     def __init__(self, df: pd.DataFrame) -> None:
@@ -198,32 +164,7 @@ class DataProcessorX(_DataProcessor):
         self._dropna()
 
     def _dropna(self) -> None:
-        self._df.dropna(inplace=True)
-
-    # @staticmethod
-    # def create_shifts(df: pd.DataFrame,
-    #                   feature_name: str,
-    #                   n_previous_time_points: int = 48) -> pd.DataFrame:
-    #     """
-    #     Creating a data frame with columns corresponding to previous time points
-    #     :param feature_name:
-    #     :param df: A pandas data frame
-    #     :param n_previous_time_points: number of previous time points to shift
-    #     :return:
-    #     """
-    #     for i, g in enumerate(
-    #             range(settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES,
-    #                   settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES * (n_previous_time_points + 1),
-    #                   settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES),
-    #             1):
-    #         df[f'{feature_name} -%0.1dmin' % g] = df[f'{feature_name}'].shift(i)
-    #     return df.dropna(how='any', axis=0)
-
-    # def _filter_X_by_glucose_indices(self,
-    #                                  glucose_value_header: str = 'GlucoseValue') -> None:
-    #     print('[Dataset] _filter_X_by_glucose_indices')
-    #     self._df = self._df.dropna(subset=[glucose_value_header]).sort_index()
-    #
+        self._df = self._df.dropna()
 
 
 class Dataset:
@@ -308,33 +249,12 @@ class DatasetX(Dataset):
     def __init__(self):
         super().__init__()
 
-    def build_X_raw_from_glucose_and_meals_datasets(self,
+    def build_raw_X_from_glucose_and_meals_datasets(self,
                                                     glucose_dataset: Dataset,
                                                     meals_dataset: Dataset) -> None:
         glucose_df = glucose_dataset.get_processed()
         meals_df = meals_dataset.get_processed()
         self._raw = pd.concat([glucose_df, meals_df], axis=1, join='outer').sort_index()
-
-    # def get_X_and_y(self,
-    #                 n_previous_time_points: int = 48,
-    #                 n_future_time_points: int = 8) \
-    #         -> Tuple[pd.DataFrame, pd.DataFrame]:
-    #     """
-    #     Returns X and y as dataframes. Contains only timepoints with enough past and future samples.
-    #     """
-    #     X = self._processed[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER].reset_index() \
-    #         .groupby(settings.DataStructure.ID_HEADER) \
-    #         .apply(DataProcessorX.create_shifts,
-    #                feature_name=settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER,
-    #                n_previous_time_points=n_previous_time_points) \
-    #         .set_index([settings.DataStructure.ID_HEADER, settings.DataStructure.DATE_HEADER])
-    #     y = self._processed[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER].reset_index() \
-    #         .groupby(settings.DataStructure.ID_HEADER) \
-    #         .apply(DataEnricherX._enrich_with_future_timepoints,
-    #                n_future_time_points=n_future_time_points) \
-    #         .set_index([settings.DataStructure.ID_HEADER, settings.DataStructure.DATE_HEADER])
-    #     idx_intersection = X.index.intersection(y.index)
-    #     return X.loc[idx_intersection], y.loc[idx_intersection]
 
     def get_multivariate_X_and_y(self,
                                  num_of_past_timepoints: int = 48,
@@ -345,24 +265,10 @@ class DatasetX(Dataset):
         X's shape is (# of instances in the dataset, # past timepoints + 1, # of features),
         y's shape is (# of future timepoints, 1).
         """
-        # X, y = self.get_X_and_y(n_previous_time_points=n_previous_time_points,
-        #                         n_future_time_points=n_future_time_points)
-        # multivariate_y = y.values.reshape(y.shape + (1,))
-        #
-        # shifted_Xs = []
-        # for feature_name in X.columns:
-        #     shifted_X = X[feature_name].reset_index().groupby('id') \
-        #         .apply(DataProcessorX.create_shifts,
-        #                feature_name=feature_name,
-        #                n_previous_time_points=48) \
-        #         .set_index(['id', 'Date'])
-        #     shifted_Xs.append(shifted_X)
-        # multivariate_X = np.dstack(shifted_Xs)
-        # return multivariate_X, multivariate_y
-
         shifted_X = self.get_processed()
         num_of_instances = shifted_X.shape[0]
         num_of_features = shifted_X.shape[1]
+
         multivariate_X = np.zeros((num_of_instances,
                                    num_of_past_timepoints + 1,
                                    num_of_features))
@@ -372,33 +278,34 @@ class DatasetX(Dataset):
         for i in range(1, num_of_past_timepoints + 1):
             shifted_X = shifted_X.groupby(level=0).shift(1)
             multivariate_X[:, i, :] = shifted_X
-        multivariate_X = multivariate_X[num_of_past_timepoints:, :, :]
+        indices_to_keep = ~np.isnan(multivariate_X).any(axis=(1, 2))
         shifted_X = self.get_processed()[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER]
         for i in range(num_of_future_timepoints):
             shifted_X = shifted_X.groupby(level=0).shift(-1)
             multivariate_y[:, i] = shifted_X
-        multivariate_y = multivariate_y[:-num_of_future_timepoints]
-        return multivariate_X, multivariate_y
+        indices_to_keep = np.logical_and(indices_to_keep, ~np.isnan(multivariate_y).any(axis=1))
+        return multivariate_X[indices_to_keep], multivariate_y[indices_to_keep]
 
 
 class Predictor:
     def __init__(self):
-        self._nn = None
+        self.nn = None
 
     def load(self, checkpoint_dir_name: str, checkpoint_num: Optional[int] = None) -> None:
         checkpoint_dir = os.path.join(settings.Files.CHECKPOINTS_DIR_NAME, checkpoint_dir_name)
         checkpoint_path = os.path.join(checkpoint_dir, 'cp-{epoch:04d}.ckpt')
         if checkpoint_num is None:
             latest = tf.train.latest_checkpoint(checkpoint_dir)
-            self._nn.load_weights(latest)
+            self.nn.load_weights(latest)
         else:
-            self._nn = tf.keras.models.load_model(checkpoint_path.format(checkpoint_num))
+            self.nn = tf.keras.models.load_model(checkpoint_path.format(checkpoint_num))
 
     def save(self, checkpoint_dir_name: str) -> None:
-        self._nn.save(checkpoint_dir_name)
+        self.nn.save(checkpoint_dir_name)
 
     def reset(self) -> None:
-        self._nn = settings.NN.MODEL.compile(optimizer=settings.NN.OPTIMIZER, loss=settings.NN.LOSS)
+        self.nn = settings.NN.MODEL
+        self.nn.compile(optimizer=settings.NN.OPTIMIZER, loss=settings.NN.LOSS)
 
 
 class Trainer:
@@ -414,17 +321,18 @@ class Trainer:
                                                          save_weights_only=True,
                                                          verbose=1)
         multivariate_X, multivariate_y = dataset.get_multivariate_X_and_y()
-        for train_idx, valid_idx in StratifiedKFold(settings.TrainingConfiguration.CROSS_VALIDATION_NUM_OF_FOLDS):
+        kf = KFold(n_splits=settings.TrainingConfiguration.CROSS_VALIDATION_NUM_OF_FOLDS,
+                   shuffle=True)
+        for train_idx, valid_idx in kf.split(X=multivariate_X):
             train_X, train_y = multivariate_X[train_idx], multivariate_y[train_idx]
             valid_X, valid_y = multivariate_X[valid_idx], multivariate_y[valid_idx]
-            self._predictor.fit(train_X,
-                                train_y,
-                                epochs=num_of_epochs,
-                                steps_per_epoch=settings.TrainingConfiguration.EVALUATION_INTERVAL,
-                                validation_data=(valid_X, valid_y),
-                                validation_steps=settings.TrainingConfiguration.VALIDATION_STEPS,
-                                callbacks=[cp_callback],
-                                verbose=1)
+            self._predictor.nn.fit(train_X,
+                                   train_y,
+                                   batch_size=settings.TrainingConfiguration.BATCH_SIZE,
+                                   epochs=num_of_epochs,
+                                   validation_data=(valid_X, valid_y),
+                                   verbose=1,
+                                   callbacks=[cp_callback])
 
     @staticmethod
     def _generate_new_checkpoint_dir_name():

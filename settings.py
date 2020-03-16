@@ -33,10 +33,6 @@ class DataStructureMeals(DataStructure):
     FEATURES_WITH_OUTLIERS = ['weight']
 
 
-# class DataStructureX(DataStructureGlucose, DataStructureMeals):
-#     pass
-
-
 class NN:
     MODEL = tf.keras.models.Sequential([
         tf.keras.layers.LSTM(32, return_sequences=True, input_shape=(49, 7)),
@@ -49,10 +45,10 @@ class NN:
 
 class TrainingConfiguration:
     BATCH_SIZE = 256
-    TRAIN_SPLIT = 690000
-    STEP = 1
-    BUFFER_SIZE = 1000
-    EVALUATION_INTERVAL = 200
-    VALIDATION_STEPS = 50
     NUM_OF_EPOCHS = 1
+    # TRAIN_SPLIT = 690000
+    # STEP = 1
+    # BUFFER_SIZE = 1000
+    # EVALUATION_INTERVAL = 200
+    # VALIDATION_STEPS = 50
     CROSS_VALIDATION_NUM_OF_FOLDS = 3
