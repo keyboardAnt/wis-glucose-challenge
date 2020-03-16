@@ -5,9 +5,9 @@
 #            Anything else is for you to decide how to implement.
 #            We provide you with a very basic working version of this class.
 #
-# Author: <first name1>_<last name1> [<first name1>_<last name2>]
+# Authors: Lior_Baltiansky Nadav_Timor
 #
-# Python 3.7
+# Python 3.6
 ####################################################################################################
 
 import pandas as pd
@@ -15,24 +15,16 @@ import numpy as np
 from scipy import stats
 # import torch
 import tensorflow as tf
-# from tensorflow import keras
-import matplotlib.pyplot as plt
+# # from tensorflow import keras
+# import matplotlib.pyplot as plt
 import os
-import sys
-from scipy.stats import pearsonr
-from sklearn.model_selection import StratifiedKFold
-from typing import List, Tuple, Sequence, Type  # Union
-from abc import abstractmethod  # ,ABC
+# import sys
+# from scipy.stats import pearsonr
+# from sklearn.model_selection import StratifiedKFold
+from typing import List, Tuple, Sequence, Type, Optional
+from abc import abstractmethod
 import settings
 
-
-# Num = Union[int, float]
-
-# The time series that you would get are such that the difference between two rows is 15 minutes.
-# This is a global number that we used to prepare the data, so you would need it for different purposes.
-
-
-####################################################################################################
 
 class _DataCleaner:
     def __init__(self, df: pd.DataFrame) -> None:
@@ -89,9 +81,6 @@ class DataCleanerMeals(_DataCleaner):
     def _remove_duplicates(self) -> None:
         indices = [settings.DataStructure.ID_HEADER, settings.DataStructure.DATE_HEADER]
         self._df = self._df.groupby(indices).sum()
-
-
-####################################################################################################
 
 
 class _DataEnricher:
@@ -169,8 +158,6 @@ class DataEnricherX(_DataEnricher):
         return df.dropna(how='any', axis=0).drop(settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER, axis=1)
 
 
-####################################################################################################
-
 class _DataProcessor:
     # ID_HEADER = 'id'
     # DATE_HEADER = 'Date'
@@ -203,9 +190,12 @@ class DataProcessorX(_DataProcessor):
         super().__init__(df)
 
     @staticmethod
-    def create_shifts(df, feature_name, n_previous_time_points=48):
+    def create_shifts(df: pd.DataFrame,
+                      feature_name: str,
+                      n_previous_time_points: int = 48) -> pd.DataFrame:
         """
         Creating a data frame with columns corresponding to previous time points
+        :param feature_name:
         :param df: A pandas data frame
         :param n_previous_time_points: number of previous time points to shift
         :return:
@@ -219,9 +209,10 @@ class DataProcessorX(_DataProcessor):
             df[f'{feature_name} -%0.1dmin' % g] = df[f'{feature_name}'].shift(i)
         return df.dropna(how='any', axis=0)
 
-    def _filter_X_by_glucose_indices(self, glucose_value_header='GlucoseValue'):
+    def _filter_X_by_glucose_indices(self,
+                                     glucose_value_header: str = 'GlucoseValue') -> None:
         print('[Dataset] _filter_X_by_glucose_indices')
-        self._all_X = self._all_X.dropna(subset=[glucose_value_header]).sort_index()
+        self._df = self._df.dropna(subset=[glucose_value_header]).sort_index()
 
     @staticmethod
     def _normalize(df):
@@ -229,8 +220,6 @@ class DataProcessorX(_DataProcessor):
         #         return (df - df.mean()) / (df.max() - df.min())
         return (df - df.mean()) / df.std()
 
-
-####################################################################################################
 
 class Dataset:
     # INDEX_COLUMNS = [0, 1]
@@ -293,6 +282,9 @@ class Dataset:
         """
         print('[Dataset] get_processed')
         return self._processed.copy()
+
+    def get_processed_shape(self) -> Sequence[Tuple[int, int]]:
+        return self._processed.shape
 
     def save_processed(self, filename: str, dir_path: str = '') -> None:
         print('[Dataset] save_processed')
@@ -368,6 +360,58 @@ class DatasetX(Dataset):
 
 
 ####################################################################################################
+
+
+class Predictor:
+    def __init__(self):
+        self._nn = None
+
+    def load(self, checkpoint_dir_name: str, checkpoint_num: Optional[int] = None) -> None:
+        checkpoint_dir = os.path.join(settings.Files.CHECKPOINTS_DIR_NAME, checkpoint_dir_name)
+        checkpoint_path = os.path.join(checkpoint_dir, 'cp-{epoch:04d}.ckpt')
+        if checkpoint_num is None:
+            latest = tf.train.latest_checkpoint(checkpoint_dir)
+            self._nn.load_weights(latest)
+        else:
+            self._nn = tf.keras.models.load_model(checkpoint_path.format(checkpoint_num))
+
+    def save(self, checkpoint_dir_name: str) -> None:
+        
+        self._nn.save_weights(checkpoint_dir_name)
+
+    def reset(self) -> None:
+        self._nn = settings.NN.MODEL.compile(optimizer=settings.NN.OPTIMIZER, loss=settings.NN.LOSS)
+
+
+class Trainer:
+    def __init__(self, predictor: Predictor):
+        self._predictor = predictor
+
+    def train(self, dataset: DatasetX, num_of_epochs: int) -> tf.keras.callbacks.History:
+        checkpoint_dir_name = Trainer._generate_new_checkpoint_dir_name()
+        checkpoint_dir = os.path.join(settings.Files.CHECKPOINTS_DIR_NAME, checkpoint_dir_name)
+        checkpoint_path = os.path.join(checkpoint_dir, 'cp-{epoch:04d}.ckpt')
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
+                                                         save_weights_only=True,
+                                                         verbose=1)
+        # train_X, train_y = dataset.get_multivariate_X_and_y()
+        # valid_X, valid_y = dataset.get_multivariate_X_and_y()
+        # model.fit(train_images,
+        #           train_labels,
+        #           epochs=num_of_epochs,
+        #           validation_data=(test_images, test_labels),
+        #           callbacks=[cp_callback])
+
+    @staticmethod
+    def _generate_new_checkpoint_dir_name():
+        return '{date:%Y-%m-%d_%H_%M_%S}'.format(date=pd.datetime.now())
+
+    @staticmethod
+    def plot_history(history: tf.keras.callbacks.History) -> None:
+        pass
+
+
+
 
 # class OLDDataset(object):
 #     def __init__(self, raw_glucose, raw_meals):
