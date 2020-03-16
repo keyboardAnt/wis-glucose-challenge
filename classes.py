@@ -212,10 +212,9 @@ class DataProcessorX(_DataProcessor):
         :return:
         """
         for i, g in enumerate(
-                range(
-                    settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES,
-                            settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES * (n_previous_time_points + 1),
-                    settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES),
+                range(settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES,
+                      settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES * (n_previous_time_points + 1),
+                      settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES),
                 1):
             df[f'{feature_name} -%0.1dmin' % g] = df[f'{feature_name}'].shift(i)
         return df.dropna(how='any', axis=0)
@@ -323,6 +322,7 @@ class DatasetX(Dataset):
         """
         Returns X and y as dataframes. Contains only timepoints with enough past and future samples.
         """
+        import ipdb; ipdb.set_trace()
         X = self._processed[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER].reset_index() \
             .groupby(settings.DataStructure.ID_HEADER) \
             .apply(DataProcessorX.create_shifts,
@@ -398,7 +398,6 @@ class Trainer:
         for train_idx, valid_idx in StratifiedKFold(settings.TrainingConfiguration.CROSS_VALIDATION_NUM_OF_FOLDS):
             train_X, train_y = multivariate_X[train_idx], multivariate_y[train_idx]
             valid_X, valid_y = multivariate_X[valid_idx], multivariate_y[valid_idx]
-            import ipdb; ipdb.set_trace()
             self._predictor.fit(train_X,
                                 train_y,
                                 epochs=num_of_epochs,
