@@ -33,6 +33,11 @@ class DataStructureMeals(DataStructure):
     FEATURES_WITH_OUTLIERS = ['weight']
 
 
+class Challenge:
+    NUM_OF_PAST_TIMEPOINTS = 12 * 60 // DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES
+    NUM_OF_FUTURE_TIMEPOINTS = 2 * 60 // DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES
+
+
 class NN:
     MODEL = tf.keras.models.Sequential([
         tf.keras.layers.LSTM(32, return_sequences=True, input_shape=(49, 7)),
@@ -42,13 +47,17 @@ class NN:
     OPTIMIZER = 'adam'
     LOSS = 'mse'
 
+    class BEST:
+        CHECKPOINT_DIR_NAME = ''
+        CHECKPOINT_NUM = -1
+
 
 class TrainingConfiguration:
     BATCH_SIZE = 256
-    NUM_OF_EPOCHS = 1
+    NUM_OF_EPOCHS = 50
     # TRAIN_SPLIT = 690000
     # STEP = 1
     # BUFFER_SIZE = 1000
     # EVALUATION_INTERVAL = 200
     # VALIDATION_STEPS = 50
-    CROSS_VALIDATION_NUM_OF_FOLDS = 3
+    CROSS_VALIDATION_NUM_OF_FOLDS = 10

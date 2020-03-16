@@ -14,6 +14,7 @@ import settings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import tensorflow as tf
 from scipy import stats
 from sklearn.model_selection import KFold
@@ -291,6 +292,22 @@ class Predictor:
     def __init__(self):
         self.nn = None
 
+    def predict(self, X_glucose: pd.DataFrame, X_meals: pd.DataFrame) -> pd.DataFrame:
+        glucose_dataset = Dataset()
+        glucose_dataset.set_raw(X_glucose)
+        glucose_dataset.process(DataProcessorGlucose)
+        meals_dataset = Dataset()
+        meals_dataset.set_raw(X_meals)
+        meals_dataset.process(DataProcessorMeals)
+        dataset = DatasetX()
+        dataset.build_raw_X_from_glucose_and_meals_datasets(glucose_dataset=glucose_dataset,
+                                                            meals_dataset=meals_dataset)
+        dataset.process(DataProcessorX)
+        multivariate_X, _ = dataset.get_multivariate_X_and_y()
+        self.load(settings.NN.BEST.CHECKPOINT_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
+        return self.nn(multivariate_X)
+
+
     def load(self, checkpoint_dir_name: str, checkpoint_num: Optional[int] = None) -> None:
         checkpoint_dir = os.path.join(settings.Files.CHECKPOINTS_DIR_NAME, checkpoint_dir_name)
         checkpoint_path = os.path.join(checkpoint_dir, 'cp-{epoch:04d}.ckpt')
@@ -351,30 +368,53 @@ class Trainer:
         plt.show()
 
 
-# class Evaluator
+class _Loss:
+    def __init__(self, y_true: pd.DataFrame, y_pred: pd.DataFrame):
+        self._y_true = y_true
+        self._y_pred = y_pred
+
+    def get(self):
+        pass
+
+
+class LossPearson(_Loss):
+    def __init__(self, y_true: pd.DataFrame, y_pred: pd.DataFrame) -> None:
+        super().__init__(y_true, y_pred)
+
+    def get(self) -> float:
+        # making sure y_true and y_pred are of the same size
+        assert self._y_true.shape == self._y_pred.shape
+        # making sure y_true and y_pred share the same exact indeces and index names
+        assert (self._y_true.index == self._y_pred.index).all() and self._y_true.index.names == self._y_pred.index.names
+        # making sure that individual_index_name is a part of the index of both dataframes
+        assert settings.DataStructure.ID_HEADER in self._y_true.index.names \
+               and settings.DataStructure.ID_HEADER in self._y_pred.index.names
+
+        # concat data frames
+        joined_df = pd.concat((self._y_true, self._y_pred), axis=1)
+        return joined_df.groupby(settings.DataStructure.ID_HEADER)\
+                        .apply(lambda x: stats.pearsonr(x.iloc[:, :settings.Challenge.NUM_OF_FUTURE_TIMEPOINTS]\
+                                                         .values\
+                                                         .ravel(),
+                                                        x.iloc[:, settings.Challenge.NUM_OF_FUTURE_TIMEPOINTS:]\
+                                                         .values\
+                                                         .ravel()
+                                                        )[0])\
+                        .mean()
+
+
+# class _Plotter:
+#     def __init__(self, data) -> None:
+#         self._data = data
+#         self._plot = self._get_plot()
 #
-# def compute_mean_pearson(y_true, y_pred, individual_index_name='id', n_future_time_points=8):
-#     """
-#     This function takes the true glucose values and the predicted ones, flattens the data per individual and then
-#     computed the Pearson correlation between the two vectors per individual.
+#     def _get_plot(self) -> Figure:
+#         pass
+
+
+# class Evaluator:
+#     def __init__(self, predictor: Predictor) -> None:
+#         self._predictor = predictor
 #
-#     **This is how we will evaluate your predictions, you may use this function in your code**
-#
-#     :param y_true: an M by n_future_time_points data frame holding the true glucose values
-#     :param y_pred: an M by n_future_time_points data frame holding the predicted glucose values
-#     :param individual_index_name: the name of the individual's indeces, default is 'id'
-#     :param n_future_time_points: number of future time points to predict, default is 8
-#     :return: the mean Pearson correlation
-#     """
-#     # making sure y_true and y_pred are of the same size
-#     assert y_true.shape == y_pred.shape
-#     # making sure y_true and y_pred share the same exact indeces and index names
-#     assert (y_true.index == y_pred.index).all() and y_true.index.names == y_pred.index.names
-#     # making sure that individual_index_name is a part of the index of both dataframes
-#     assert individual_index_name in y_true.index.names and individual_index_name in y_pred.index.names
-#
-#     # concat data frames
-#     joined_df = pd.concat((y_true, y_pred), axis=1)
-#     return joined_df.groupby(individual_index_name) \
-#         .apply(lambda x: pearsonr(x.iloc[:, :n_future_time_points].values.ravel(),
-#                                   x.iloc[:, n_future_time_points:].values.ravel())[0]).mean()
+#     def get_loss(self, loss: Type[_Loss]):
+#         pass
