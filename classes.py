@@ -138,24 +138,24 @@ class DataEnricherX(_DataEnricher):
         self._df['sin_time'] = (np.sin(f) / MINUTES_IN_A_DAY).values
         self._df['cos_time'] = (np.cos(f) / MINUTES_IN_A_DAY).values
 
-    @staticmethod
-    def _enrich_with_future_timepoints(df: pd.DataFrame,
-                                       n_future_time_points: int = 8,
-                                       timepoints_resolution_in_minutes: int = 15) -> pd.DataFrame:
-        """
-        Extracting the m next time points (difference from time zero)
-        :param n_future_time_points: number of future time points
-        :return:
-        """
-        for i, g in enumerate(range(timepoints_resolution_in_minutes,
-                                    timepoints_resolution_in_minutes * (n_future_time_points + 1),
-                                    timepoints_resolution_in_minutes),
-                              1):
-            new_header = f'{settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER} difference +%0.1dmin' % g
-            df[new_header] = \
-                df[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER].shift(-i) \
-                - df[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER]
-        return df.dropna(how='any', axis=0).drop(settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER, axis=1)
+    # @staticmethod
+    # def _enrich_with_future_timepoints(df: pd.DataFrame,
+    #                                    n_future_time_points: int = 8,
+    #                                    timepoints_resolution_in_minutes: int = 15) -> pd.DataFrame:
+    #     """
+    #     Extracting the m next time points (difference from time zero)
+    #     :param n_future_time_points: number of future time points
+    #     :return:
+    #     """
+    #     for i, g in enumerate(range(timepoints_resolution_in_minutes,
+    #                                 timepoints_resolution_in_minutes * (n_future_time_points + 1),
+    #                                 timepoints_resolution_in_minutes),
+    #                           1):
+    #         new_header = f'{settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER} difference +%0.1dmin' % g
+    #         df[new_header] = \
+    #             df[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER].shift(-i) \
+    #             - df[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER]
+    #     return df.dropna(how='any', axis=0).drop(settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER, axis=1)
 
 
 class _DataProcessor:
@@ -200,24 +200,24 @@ class DataProcessorX(_DataProcessor):
     def _dropna(self) -> None:
         self._df.dropna(inplace=True)
 
-    @staticmethod
-    def create_shifts(df: pd.DataFrame,
-                      feature_name: str,
-                      n_previous_time_points: int = 48) -> pd.DataFrame:
-        """
-        Creating a data frame with columns corresponding to previous time points
-        :param feature_name:
-        :param df: A pandas data frame
-        :param n_previous_time_points: number of previous time points to shift
-        :return:
-        """
-        for i, g in enumerate(
-                range(settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES,
-                      settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES * (n_previous_time_points + 1),
-                      settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES),
-                1):
-            df[f'{feature_name} -%0.1dmin' % g] = df[f'{feature_name}'].shift(i)
-        return df.dropna(how='any', axis=0)
+    # @staticmethod
+    # def create_shifts(df: pd.DataFrame,
+    #                   feature_name: str,
+    #                   n_previous_time_points: int = 48) -> pd.DataFrame:
+    #     """
+    #     Creating a data frame with columns corresponding to previous time points
+    #     :param feature_name:
+    #     :param df: A pandas data frame
+    #     :param n_previous_time_points: number of previous time points to shift
+    #     :return:
+    #     """
+    #     for i, g in enumerate(
+    #             range(settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES,
+    #                   settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES * (n_previous_time_points + 1),
+    #                   settings.DataStructureGlucose.SAMPLING_INTERVAL_IN_MINUTES),
+    #             1):
+    #         df[f'{feature_name} -%0.1dmin' % g] = df[f'{feature_name}'].shift(i)
+    #     return df.dropna(how='any', axis=0)
 
     # def _filter_X_by_glucose_indices(self,
     #                                  glucose_value_header: str = 'GlucoseValue') -> None:
@@ -315,50 +315,69 @@ class DatasetX(Dataset):
         meals_df = meals_dataset.get_processed()
         self._raw = pd.concat([glucose_df, meals_df], axis=1, join='outer').sort_index()
 
-    def get_X_and_y(self,
-                    n_previous_time_points: int = 48,
-                    n_future_time_points: int = 8) \
-            -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Returns X and y as dataframes. Contains only timepoints with enough past and future samples.
-        """
-        import ipdb; ipdb.set_trace()
-        X = self._processed[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER].reset_index() \
-            .groupby(settings.DataStructure.ID_HEADER) \
-            .apply(DataProcessorX.create_shifts,
-                   feature_name=settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER,
-                   n_previous_time_points=n_previous_time_points) \
-            .set_index([settings.DataStructure.ID_HEADER, settings.DataStructure.DATE_HEADER])
-        y = self._processed[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER].reset_index() \
-            .groupby(settings.DataStructure.ID_HEADER) \
-            .apply(DataEnricherX._enrich_with_future_timepoints,
-                   n_future_time_points=n_future_time_points) \
-            .set_index([settings.DataStructure.ID_HEADER, settings.DataStructure.DATE_HEADER])
-        idx_intersection = X.index.intersection(y.index)
-        return X.loc[idx_intersection], y.loc[idx_intersection]
+    # def get_X_and_y(self,
+    #                 n_previous_time_points: int = 48,
+    #                 n_future_time_points: int = 8) \
+    #         -> Tuple[pd.DataFrame, pd.DataFrame]:
+    #     """
+    #     Returns X and y as dataframes. Contains only timepoints with enough past and future samples.
+    #     """
+    #     X = self._processed[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER].reset_index() \
+    #         .groupby(settings.DataStructure.ID_HEADER) \
+    #         .apply(DataProcessorX.create_shifts,
+    #                feature_name=settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER,
+    #                n_previous_time_points=n_previous_time_points) \
+    #         .set_index([settings.DataStructure.ID_HEADER, settings.DataStructure.DATE_HEADER])
+    #     y = self._processed[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER].reset_index() \
+    #         .groupby(settings.DataStructure.ID_HEADER) \
+    #         .apply(DataEnricherX._enrich_with_future_timepoints,
+    #                n_future_time_points=n_future_time_points) \
+    #         .set_index([settings.DataStructure.ID_HEADER, settings.DataStructure.DATE_HEADER])
+    #     idx_intersection = X.index.intersection(y.index)
+    #     return X.loc[idx_intersection], y.loc[idx_intersection]
 
     def get_multivariate_X_and_y(self,
-                                 n_previous_time_points: int = 48,
-                                 n_future_time_points: int = 8) \
+                                 num_of_past_timepoints: int = 48,
+                                 num_of_future_timepoints: int = 8) \
             -> Sequence[Tuple[np.ndarray, np.ndarray]]:
         """
         Returns a 2-tuple of 3D np.ndarray with the following shapes:
         X's shape is (# of instances in the dataset, # past timepoints + 1, # of features),
         y's shape is (# of future timepoints, 1).
         """
-        X, y = self.get_X_and_y(n_previous_time_points=n_previous_time_points,
-                                n_future_time_points=n_future_time_points)
-        multivariate_y = y.values.reshape(y.shape + (1,))
+        # X, y = self.get_X_and_y(n_previous_time_points=n_previous_time_points,
+        #                         n_future_time_points=n_future_time_points)
+        # multivariate_y = y.values.reshape(y.shape + (1,))
+        #
+        # shifted_Xs = []
+        # for feature_name in X.columns:
+        #     shifted_X = X[feature_name].reset_index().groupby('id') \
+        #         .apply(DataProcessorX.create_shifts,
+        #                feature_name=feature_name,
+        #                n_previous_time_points=48) \
+        #         .set_index(['id', 'Date'])
+        #     shifted_Xs.append(shifted_X)
+        # multivariate_X = np.dstack(shifted_Xs)
+        # return multivariate_X, multivariate_y
 
-        shifted_Xs = []
-        for feature_name in X.columns:
-            shifted_X = X[feature_name].reset_index().groupby('id') \
-                .apply(DataProcessorX.create_shifts,
-                       feature_name=feature_name,
-                       n_previous_time_points=48) \
-                .set_index(['id', 'Date'])
-            shifted_Xs.append(shifted_X)
-        multivariate_X = np.dstack(shifted_Xs)
+        shifted_X = self.get_processed()
+        num_of_instances = shifted_X.shape[0]
+        num_of_features = shifted_X.shape[1]
+        multivariate_X = np.zeros((num_of_instances,
+                                   num_of_past_timepoints + 1,
+                                   num_of_features))
+        multivariate_y = np.zeros((num_of_instances,
+                                   num_of_future_timepoints))
+        multivariate_X[:, 0, :] = shifted_X.groupby(level=0).shift(0)
+        for i in range(1, num_of_past_timepoints + 1):
+            shifted_X = shifted_X.groupby(level=0).shift(1)
+            multivariate_X[:, i, :] = shifted_X
+        multivariate_X = multivariate_X[num_of_past_timepoints:, :, :]
+        shifted_X = self.get_processed()[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER]
+        for i in range(num_of_future_timepoints):
+            shifted_X = shifted_X.groupby(level=0).shift(-1)
+            multivariate_y[:, i] = shifted_X
+        multivariate_y = multivariate_y[:-num_of_future_timepoints]
         return multivariate_X, multivariate_y
 
 
