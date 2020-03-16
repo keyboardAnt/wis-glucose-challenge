@@ -343,13 +343,14 @@ class Trainer:
         for train_idx, valid_idx in kf.split(X=multivariate_X):
             train_X, train_y = multivariate_X[train_idx], multivariate_y[train_idx]
             valid_X, valid_y = multivariate_X[valid_idx], multivariate_y[valid_idx]
-            self._predictor.nn.fit(train_X,
-                                   train_y,
-                                   batch_size=settings.TrainingConfiguration.BATCH_SIZE,
-                                   epochs=num_of_epochs,
-                                   validation_data=(valid_X, valid_y),
-                                   verbose=1,
-                                   callbacks=[cp_callback])
+            history = self._predictor.nn.fit(train_X,
+                                             train_y,
+                                             batch_size=settings.TrainingConfiguration.BATCH_SIZE,
+                                             epochs=num_of_epochs,
+                                             validation_data=(valid_X, valid_y),
+                                             verbose=1,
+                                             callbacks=[cp_callback])
+        return history
 
     @staticmethod
     def _generate_new_checkpoint_dir_name():
