@@ -32,8 +32,8 @@ if __name__ == "__main__":
 
     predictor = Predictor()
     predictor.reset()
-    # predictor.load()
-
+    # predictor.load(settings.NN.BEST.CHECKPOINT_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
+    
     trainer = Trainer(predictor)
     history = trainer.train(dataset, settings.TrainingConfiguration.NUM_OF_EPOCHS)
     trainer.plot_history(history)
