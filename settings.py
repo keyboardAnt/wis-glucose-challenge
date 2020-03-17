@@ -13,7 +13,9 @@ class Files:
     PROCESSED_DATASET_GLUCOSE_FILENAME = 'ProcessedGlucoseValues.csv'
     PROCESSED_DATASET_MEALS_FILENAME = 'ProcessedMeals.csv'
 
+    LOGS_DIR_NAME = 'logs'
     CHECKPOINTS_DIR_NAME = 'checkpoints'
+    FIT_HISTORY_DIR_NAME = 'fit_history'
 
 
 class DataStructure:
@@ -40,7 +42,7 @@ class Challenge:
 
 class NN:
     MODEL = tf.keras.models.Sequential([
-        tf.keras.layers.LSTM(32, return_sequences=True, input_shape=(49, 7)),
+        tf.keras.layers.LSTM(32, activation='relu', return_sequences=True, input_shape=(49, 7)),
         tf.keras.layers.LSTM(16, activation='relu'),
         tf.keras.layers.Dense(8)
     ])
@@ -55,9 +57,9 @@ class NN:
 class TrainingConfiguration:
     BATCH_SIZE = 256
     NUM_OF_EPOCHS = 50
-    # TRAIN_SPLIT = 690000
     # STEP = 1
     # BUFFER_SIZE = 1000
-    # EVALUATION_INTERVAL = 200
-    # VALIDATION_STEPS = 50
     CROSS_VALIDATION_NUM_OF_FOLDS = 10
+    # EVALUATION_INTERVAL = 200
+    STEPS_PER_EPOCH = 200
+    VALIDATION_STEPS = 50
