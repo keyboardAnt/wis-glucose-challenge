@@ -31,13 +31,11 @@ if __name__ == "__main__":
     print('dataset.get_processed_shape()', dataset.get_processed_shape())
 
     predictor = Predictor()
-    # predictor.reset()
-    predictor.load(settings.NN.BEST.LOGS_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
+    # predictor.load(settings.NN.BEST.LOGS_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
 
     trainer = Trainer(predictor)
     history_of_all_folds = trainer.train(dataset, settings.TrainingConfiguration.NUM_OF_EPOCHS)
     trainer.plot_history(history_of_all_folds[-1])
-    predictor.save()
 
     # evaluator = Evaluator(predictor)
     # evaluator.calc_loss(loss_fn(y_true, y_pred))

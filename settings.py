@@ -42,15 +42,19 @@ class Challenge:
 
 class NN:
     MODEL = tf.keras.models.Sequential([
-        tf.keras.layers.LSTM(32, activation='relu', return_sequences=True, input_shape=(49, 7)),
-        tf.keras.layers.LSTM(16, activation='relu'),
+        # tf.keras.layers.LSTM(32, activation='relu', return_sequences=True, input_shape=(49, 7)),
+        # tf.keras.layers.LSTM(16, activation='relu'),
+        tf.keras.layers.LSTM(32, return_sequences=True, input_shape=(49, 7)),
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.LSTM(16, dropout=.1),
+        tf.keras.layers.BatchNormalization(),
         tf.keras.layers.Dense(8)
     ])
     OPTIMIZER = 'adam'
     LOSS = 'mse'
 
     class BEST:
-        LOGS_DIR_NAME = '2020-03-17_21_21_48'
+        LOGS_DIR_NAME = '2020-03-17_22_40_40'
         CHECKPOINT_NUM = None
 
 

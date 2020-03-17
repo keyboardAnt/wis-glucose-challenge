@@ -291,6 +291,7 @@ class DatasetX(Dataset):
 class Predictor:
     def __init__(self):
         self.nn = None
+        self.reset()
 
     def predict(self, X_glucose: pd.DataFrame, X_meals: pd.DataFrame) -> pd.DataFrame:
         glucose_dataset = Dataset()
@@ -305,7 +306,7 @@ class Predictor:
         dataset.process(DataProcessorX)
         multivariate_X, _ = dataset.get_multivariate_X_and_y()
         self.load(settings.NN.BEST.LOGS_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
-        return self.nn(multivariate_X)
+        return self.nn.predict(multivariate_X)
 
     def load(self, logs_dir_name: str, checkpoint_num: Optional[int] = None) -> None:
         checkpoint_dir = os.path.join(settings.Files.LOGS_DIR_NAME,
@@ -315,12 +316,11 @@ class Predictor:
             checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
         else:
             checkpoint_path = os.path.join(checkpoint_dir, 'cp-{epoch:04d}.ckpt'.format(checkpoint_num))
-        self.reset()
         print(f'load model weights from: {checkpoint_path}')
         self.nn.load_weights(checkpoint_path)
 
-    def save(self, checkpoint_dir_name: str) -> None:
-        self.nn.save(checkpoint_dir_name)
+    # def save(self, checkpoint_dir_name: str) -> None:
+    #     self.nn.save(checkpoint_dir_name)
 
     def reset(self) -> None:
         self.nn = settings.NN.MODEL
