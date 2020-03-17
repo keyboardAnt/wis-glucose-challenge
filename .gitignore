@@ -1,8 +1,4 @@
 .idea
 *.csv
-.ipynb_checkpoints
 __pycache__
-*.ipynb
-checkpoints
 .DS_Store
-logs/
