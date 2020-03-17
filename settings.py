@@ -50,8 +50,8 @@ class NN:
     LOSS = 'mse'
 
     class BEST:
-        CHECKPOINT_DIR_NAME = ''
-        CHECKPOINT_NUM = -1
+        LOGS_DIR_NAME = '2020-03-17_21_21_48'
+        CHECKPOINT_NUM = None
 
 
 class TrainingConfiguration:

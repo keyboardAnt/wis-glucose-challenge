@@ -304,18 +304,20 @@ class Predictor:
                                                             meals_dataset=meals_dataset)
         dataset.process(DataProcessorX)
         multivariate_X, _ = dataset.get_multivariate_X_and_y()
-        self.load(settings.NN.BEST.CHECKPOINT_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
+        self.load(settings.NN.BEST.LOGS_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
         return self.nn(multivariate_X)
 
-
-    def load(self, checkpoint_dir_name: str, checkpoint_num: Optional[int] = None) -> None:
-        checkpoint_dir = os.path.join(settings.Files.CHECKPOINTS_DIR_NAME, checkpoint_dir_name)
-        checkpoint_path = os.path.join(checkpoint_dir, 'cp-{epoch:04d}.ckpt')
+    def load(self, logs_dir_name: str, checkpoint_num: Optional[int] = None) -> None:
+        checkpoint_dir = os.path.join(settings.Files.LOGS_DIR_NAME,
+                                      logs_dir_name,
+                                      settings.Files.CHECKPOINTS_DIR_NAME)
         if checkpoint_num is None:
-            latest = tf.train.latest_checkpoint(checkpoint_dir)
-            self.nn.load_weights(latest)
+            checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
         else:
-            self.nn = tf.keras.models.load_model(checkpoint_path.format(checkpoint_num))
+            checkpoint_path = os.path.join(checkpoint_dir, 'cp-{epoch:04d}.ckpt'.format(checkpoint_num))
+        self.reset()
+        print(f'load model weights from: {checkpoint_path}')
+        self.nn.load_weights(checkpoint_path)
 
     def save(self, checkpoint_dir_name: str) -> None:
         self.nn.save(checkpoint_dir_name)
