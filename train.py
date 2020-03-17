@@ -33,10 +33,10 @@ if __name__ == "__main__":
     predictor = Predictor()
     predictor.reset()
     # predictor.load(settings.NN.BEST.CHECKPOINT_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
-    
+
     trainer = Trainer(predictor)
-    history = trainer.train(dataset, settings.TrainingConfiguration.NUM_OF_EPOCHS)
-    trainer.plot_history(history)
+    history_of_all_folds = trainer.train(dataset, settings.TrainingConfiguration.NUM_OF_EPOCHS)
+    trainer.plot_history(history_of_all_folds[-1])
     predictor.save()
 
     # evaluator = Evaluator(predictor)

@@ -329,7 +329,7 @@ class Trainer:
     def __init__(self, predictor: Predictor):
         self._predictor = predictor
 
-    def train(self, dataset: DatasetX, num_of_epochs: int) -> tf.keras.callbacks.History:
+    def train(self, dataset: DatasetX, num_of_epochs: int) -> List[tf.keras.callbacks.History]:
         checkpoint_dir_name = Trainer._generate_new_checkpoint_dir_name()
         checkpoint_dir = os.path.join(settings.Files.CHECKPOINTS_DIR_NAME, checkpoint_dir_name)
         print(f'starting training... checkpoints are saved at: {checkpoint_dir}')
@@ -340,6 +340,7 @@ class Trainer:
         multivariate_X, multivariate_y = dataset.get_multivariate_X_and_y()
         kf = KFold(n_splits=settings.TrainingConfiguration.CROSS_VALIDATION_NUM_OF_FOLDS,
                    shuffle=True)
+        history_of_all_folds = []
         for train_idx, valid_idx in kf.split(X=multivariate_X):
             train_X, train_y = multivariate_X[train_idx], multivariate_y[train_idx]
             valid_X, valid_y = multivariate_X[valid_idx], multivariate_y[valid_idx]
@@ -350,7 +351,8 @@ class Trainer:
                                              validation_data=(valid_X, valid_y),
                                              verbose=1,
                                              callbacks=[cp_callback])
-        return history
+            history_of_all_folds.append(history)
+        return history_of_all_folds
 
     @staticmethod
     def _generate_new_checkpoint_dir_name():
