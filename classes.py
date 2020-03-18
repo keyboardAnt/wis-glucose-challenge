@@ -290,6 +290,7 @@ class DatasetX(Dataset):
 
 class Predictor:
     def __init__(self):
+        self._strategy = tf.distribute.MirroredStrategy()
         self.nn = None
         self.reset()
 
@@ -309,6 +310,17 @@ class Predictor:
         return self.nn.predict(multivariate_X)
 
     def load(self, logs_dir_name: str, checkpoint_num: Optional[int] = None) -> None:
+        self._load_model(logs_dir_name)
+        self._load_weights(logs_dir_name=logs_dir_name,
+                           checkpoint_num=checkpoint_num)
+
+    def _load_model(self, logs_dir_name: str):
+        with self._strategy.scope():
+            self.nn = tf.keras.models.load_model(os.path.join(settings.Files.LOGS_DIR_NAME,
+                                                          logs_dir_name,
+                                                          settings.Files.SAVED_MODEL_DIR_NAME))
+
+    def _load_weights(self, logs_dir_name: str, checkpoint_num: Optional[int] = None) -> None:
         checkpoint_dir = os.path.join(settings.Files.LOGS_DIR_NAME,
                                       logs_dir_name,
                                       settings.Files.CHECKPOINTS_DIR_NAME)
@@ -317,14 +329,16 @@ class Predictor:
         else:
             checkpoint_path = os.path.join(checkpoint_dir, f'cp-{checkpoint_num:04d}.ckpt')
         print(f'load model weights from: {checkpoint_path}')
-        self.nn.load_weights(checkpoint_path)
+        with self._strategy.scope():
+            self.nn.load_weights(checkpoint_path)
 
     # def save(self, checkpoint_dir_name: str) -> None:
     #     self.nn.save(checkpoint_dir_name)
 
     def reset(self) -> None:
-        self.nn = settings.NN.MODEL
-        self.nn.compile(optimizer=settings.NN.OPTIMIZER, loss=settings.NN.LOSS)
+        with self._strategy.scope():
+            self.nn = settings.NN.get_model()
+            self.nn.compile(optimizer=settings.NN.OPTIMIZER, loss=settings.NN.LOSS)
 
 
 class Fitter:
@@ -355,16 +369,16 @@ class Fitter:
         for train_idx, valid_idx in kf.split(X=multivariate_X):
             train_X, train_y = multivariate_X[train_idx], multivariate_y[train_idx]
             valid_X, valid_y = multivariate_X[valid_idx], multivariate_y[valid_idx]
-            train_dataset = tf.data.Dataset.from_tensor_slices((train_X, train_y)) \
-                                           .cache() \
-                                           .shuffle(settings.TrainingConfiguration.BATCH_SIZE) \
-                                           .batch(settings.TrainingConfiguration.BATCH_SIZE) \
-                                           .repeat()
+            train_dataset = tf.data.Dataset.from_tensor_slices((train_X, train_y))
+            train_dataset = train_dataset.cache() \
+                                         .shuffle(settings.TrainingConfiguration.BUFFER_SIZE,
+                                                  reshuffle_each_iteration=True) \
+                                         .batch(settings.TrainingConfiguration.BATCH_SIZE) \
+                                         .repeat()
             valid_dataset = tf.data.Dataset.from_tensor_slices((valid_X, valid_y)) \
                                            .batch(settings.TrainingConfiguration.BATCH_SIZE) \
                                            .repeat()
             history = self._predictor.nn.fit(train_dataset,
-                                             # batch_size=settings.TrainingConfiguration.BATCH_SIZE,
                                              epochs=self._num_of_epochs,
                                              validation_data=valid_dataset,
                                              verbose=1,

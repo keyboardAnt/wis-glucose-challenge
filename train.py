@@ -6,19 +6,19 @@ if __name__ == "__main__":
     processed_data_dir_path = os.path.join(settings.Files.DATA_DIR_PATH, settings.Files.PROCESSED_DATA_DIR_NAME)
 
     # glucose_dataset = Dataset()
-    # # glucose_dataset.load_raw(settings.Files.RAW_GLUCOSE_FILENAME, raw_data_dir_path)
-    # # glucose_dataset.process(DataProcessorGlucose)
-    # # glucose_dataset.save_processed(settings.Files.PROCESSED_DATASET_GLUCOSE_FILENAME,
-    # #                                processed_data_dir_path)
+    # # # glucose_dataset.load_raw(settings.Files.RAW_GLUCOSE_FILENAME, raw_data_dir_path)
+    # # # glucose_dataset.process(DataProcessorGlucose)
+    # # # glucose_dataset.save_processed(settings.Files.PROCESSED_DATASET_GLUCOSE_FILENAME,
+    # # #                                processed_data_dir_path)
     # glucose_dataset.load_processed(settings.Files.PROCESSED_DATASET_GLUCOSE_FILENAME,
     #                                processed_data_dir_path)
     # print('glucose_dataset.get_processed_shape()', glucose_dataset.get_processed_shape())
-    #
+    # #
     # meals_dataset = Dataset()
-    # # meals_dataset.load_raw(settings.Files.RAW_MEALS_FILENAME, raw_data_dir_path)
-    # # meals_dataset.process(DataProcessorMeals)
-    # # meals_dataset.save_processed(settings.Files.PROCESSED_DATASET_MEALS_FILENAME,
-    # #                              processed_data_dir_path)
+    # # # meals_dataset.load_raw(settings.Files.RAW_MEALS_FILENAME, raw_data_dir_path)
+    # # # meals_dataset.process(DataProcessorMeals)
+    # # # meals_dataset.save_processed(settings.Files.PROCESSED_DATASET_MEALS_FILENAME,
+    # # #                              processed_data_dir_path)
     # meals_dataset.load_processed(settings.Files.PROCESSED_DATASET_MEALS_FILENAME,
     #                              processed_data_dir_path)
     # print('meals_dataset.get_processed_shape()', meals_dataset.get_processed_shape())
@@ -31,7 +31,9 @@ if __name__ == "__main__":
     print('dataset.get_processed_shape()', dataset.get_processed_shape())
 
     predictor = Predictor()
-    predictor.load(settings.NN.BEST.LOGS_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
+    #TODO: Use best
+    # predictor.load(settings.NN.BEST.LOGS_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
+    predictor.load('2020-03-18_09_47_21', 3)
 
     trainer = Trainer(predictor)
     history_of_all_folds = trainer.train(dataset, settings.TrainingConfiguration.NUM_OF_EPOCHS)

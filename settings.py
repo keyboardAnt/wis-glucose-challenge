@@ -1,4 +1,5 @@
 import tensorflow as tf
+from typing import Type
 
 
 class Files:
@@ -29,7 +30,32 @@ class DataStructure:
 class DataStructureGlucose(DataStructure):
     SAMPLING_INTERVAL_IN_MINUTES = 15
     GLUCOSE_VALUE_HEADER = 'GlucoseValue'
-    GLUCOSE_CORRELATED_FEATURES = ['weight', 'carbohydrate_g', 'energy_kcal', 'totallipid_g', 'caffeine_mg']
+    GLUCOSE_CORRELATED_FEATURES = ['weight',
+                                   'unit_id',
+                                   'alcohol_g',
+                                   'caffeine_mg',
+                                   'calcium_mg',
+                                   'carbohydrate_g',
+                                   'cholesterol_mg',
+                                   'energy_kcal',
+                                   'magnesium_mg',
+                                   'niacin_mg',
+                                   'protein_g',
+                                   'sodium_mg',
+                                   'sugarstotal_g',
+                                   'thiamin_mg',
+                                   'totaldietaryfiber_g',
+                                   'totallipid_g',
+                                   'totalmonounsaturatedfattyacids_g',
+                                   'totalpolyunsaturatedfattyacids_g',
+                                   'totalsaturatedfattyacids_g',
+                                   'totaltransfattyacids_g',
+                                   'vitaminc_mg',
+                                   'vitamind_iu',
+                                   'vitamine_mg',
+                                   'water_g',
+                                   'zinc_mg']
+    # GLUCOSE_CORRELATED_FEATURES = ['weight', 'carbohydrate_g', 'energy_kcal', 'totallipid_g']
 
 
 class DataStructureMeals(DataStructure):
@@ -42,27 +68,42 @@ class Challenge:
 
 
 class NN:
-    MODEL = tf.keras.models.Sequential([
-        tf.keras.layers.LSTM(32, return_sequences=True, input_shape=(49, 7)),
-        tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.LSTM(16, dropout=.1),
-        tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Dense(8)
+    @staticmethod
+    def get_model() -> Type[tf.keras.models.Model]:
+        return tf.keras.models.Sequential([
+            tf.keras.layers.LSTM(256, return_sequences=True, input_shape=(1 + Challenge.NUM_OF_PAST_TIMEPOINTS, 28)),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.LSTM(128, return_sequences=True, dropout=.5),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.LSTM(64, return_sequences=True, dropout=.5),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.LSTM(32, return_sequences=True, dropout=.5),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.LSTM(16, dropout=.5),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dense(8)
     ])
+    # return
+    # MODEL = tf.keras.models.Sequential([
+    #     tf.keras.layers.LSTM(32, return_sequences=True, input_shape=(1 + Challenge.NUM_OF_PAST_TIMEPOINTS, 7)),
+    #     tf.keras.layers.BatchNormalization(),
+    #     tf.keras.layers.LSTM(16, dropout=.1),
+    #     tf.keras.layers.BatchNormalization(),
+    #     tf.keras.layers.Dense(8)
+    # ])
     OPTIMIZER = 'adam'
     LOSS = 'mse'
 
     class BEST:
-        LOGS_DIR_NAME = 'best_model'
+        LOGS_DIR_NAME = 'best'
         CHECKPOINT_NUM = 17
 
 
 class TrainingConfiguration:
+    BUFFER_SIZE = 10000
     BATCH_SIZE = 256
+    # BATCH_SIZE = 64
     NUM_OF_EPOCHS = 50
-    # STEP = 1
-    # BUFFER_SIZE = 1000
     CROSS_VALIDATION_NUM_OF_FOLDS = 10
-    # EVALUATION_INTERVAL = 200
     STEPS_PER_EPOCH = 200
     VALIDATION_STEPS = 50
