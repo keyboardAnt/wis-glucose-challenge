@@ -71,13 +71,7 @@ class NN:
     @staticmethod
     def get_model() -> Type[tf.keras.models.Model]:
         return tf.keras.models.Sequential([
-            tf.keras.layers.LSTM(256, return_sequences=True, input_shape=(1 + Challenge.NUM_OF_PAST_TIMEPOINTS, 28)),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.LSTM(128, return_sequences=True, dropout=.5),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.LSTM(64, return_sequences=True, dropout=.5),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.LSTM(32, return_sequences=True, dropout=.5),
+            tf.keras.layers.LSTM(32, return_sequences=True, input_shape=(1 + Challenge.NUM_OF_PAST_TIMEPOINTS, 28)),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.LSTM(16, dropout=.5),
             tf.keras.layers.BatchNormalization(),
@@ -91,19 +85,19 @@ class NN:
     #     tf.keras.layers.BatchNormalization(),
     #     tf.keras.layers.Dense(8)
     # ])
-    OPTIMIZER = 'adam'
+    OPTIMIZER = 'sgd'
     LOSS = 'mse'
 
     class BEST:
         LOGS_DIR_NAME = 'best'
-        CHECKPOINT_NUM = 17
+        CHECKPOINT_NUM = 37
 
 
 class TrainingConfiguration:
-    BUFFER_SIZE = 10000
-    BATCH_SIZE = 256
+    BUFFER_SIZE = 100000
+    BATCH_SIZE = 512
     # BATCH_SIZE = 64
-    NUM_OF_EPOCHS = 50
+    NUM_OF_EPOCHS = 100
     CROSS_VALIDATION_NUM_OF_FOLDS = 10
-    STEPS_PER_EPOCH = 200
-    VALIDATION_STEPS = 50
+    STEPS_PER_EPOCH = 50
+    VALIDATION_STEPS = 100

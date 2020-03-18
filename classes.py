@@ -267,6 +267,7 @@ class DatasetX(Dataset):
         y's shape is (# of future timepoints, 1).
         """
         shifted_X = self.get_processed()
+        shifted_X_copy = shifted_X.copy()
         num_of_instances = shifted_X.shape[0]
         num_of_features = shifted_X.shape[1]
 
@@ -280,7 +281,7 @@ class DatasetX(Dataset):
             shifted_X = shifted_X.groupby(level=0).shift(1)
             multivariate_X[:, i, :] = shifted_X
         indices_to_keep = ~np.isnan(multivariate_X).any(axis=(1, 2))
-        shifted_X = self.get_processed()[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER]
+        shifted_X = shifted_X_copy[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER] # self.get_processed()[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER]
         for i in range(num_of_future_timepoints):
             shifted_X = shifted_X.groupby(level=0).shift(-1)
             multivariate_y[:, i] = shifted_X
@@ -295,6 +296,7 @@ class Predictor:
         self.reset()
 
     def predict(self, X_glucose: pd.DataFrame, X_meals: pd.DataFrame) -> pd.DataFrame:
+        self.load(settings.NN.BEST.LOGS_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
         glucose_dataset = Dataset()
         glucose_dataset.set_raw(X_glucose)
         glucose_dataset.process(DataProcessorGlucose)

@@ -31,9 +31,7 @@ if __name__ == "__main__":
     print('dataset.get_processed_shape()', dataset.get_processed_shape())
 
     predictor = Predictor()
-    #TODO: Use best
-    # predictor.load(settings.NN.BEST.LOGS_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
-    predictor.load('2020-03-18_09_47_21', 3)
+    predictor.load(settings.NN.BEST.LOGS_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
 
     trainer = Trainer(predictor)
     history_of_all_folds = trainer.train(dataset, settings.TrainingConfiguration.NUM_OF_EPOCHS)
