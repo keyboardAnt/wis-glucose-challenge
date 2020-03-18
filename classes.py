@@ -315,7 +315,7 @@ class Predictor:
         if checkpoint_num is None:
             checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
         else:
-            checkpoint_path = os.path.join(checkpoint_dir, 'cp-{epoch:04d}.ckpt'.format(checkpoint_num))
+            checkpoint_path = os.path.join(checkpoint_dir, f'cp-{checkpoint_num:04d}.ckpt')
         print(f'load model weights from: {checkpoint_path}')
         self.nn.load_weights(checkpoint_path)
 
@@ -333,21 +333,20 @@ class Fitter:
         self._dataset = dataset
         self._num_of_epochs = num_of_epochs
         self._logs_dir_name = Fitter._generate_a_unique_logs_dir_name()
+        self._saved_model_dir_path = os.path.join(self._logs_dir_name,
+                                                  settings.Files.SAVED_MODEL_DIR_NAME)
         self._checkpoints_dir_path = os.path.join(self._logs_dir_name,
                                                   settings.Files.CHECKPOINTS_DIR_NAME)
         self._fit_history_dir_path = os.path.join(self._logs_dir_name,
                                                   settings.Files.FIT_HISTORY_DIR_NAME)
+        self._save_model()
         self.fit()
+
+    def _save_model(self):
+        self._predictor.nn.save(self._saved_model_dir_path)
 
     def fit(self) -> List[tf.keras.callbacks.History]:
         print(self._get_message_about_paths())
-        # training_dir_name = Trainer._generate_a_new_training_dir_name()
-        # training_dir_path = os.path.join(settings.Files.LOGS_DIR_NAME, training_dir_name)
-        # checkpoint_dir_path = os.path.joins(training_dir_path, settings.Files.CHECKPOINTS_DIR_NAME)
-        # checkpoint_path = os.path.join(self._checkpoints_dir_path, 'cp-{epoch:04d}.ckpt')
-        # cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
-        #                                                  save_weights_only=True,
-        #                                                  verbose=1)
         tensorboard_callback = self._get_tensorboard_callback()
         cp_callback = self._get_checkpoint_callback()
         multivariate_X, multivariate_y = self._dataset.get_multivariate_X_and_y()
@@ -404,57 +403,9 @@ class Trainer:
         self._predictor = predictor
 
     def train(self, dataset: DatasetX, num_of_epochs: int) -> List[tf.keras.callbacks.History]:
-        # training_dir_name = Trainer._generate_a_new_training_dir_name()
-        # training_dir_path = os.path.join(settings.Files.RUNS_DIR_NAME, training_dir_name)
-        # checkpoint_dir_path = os.path.joins(training_dir_path, settings.Files.CHECKPOINTS_DIR_NAME)
-        # checkpoint_path = os.path.join(checkpoint_dir_path, 'cp-{epoch:04d}.ckpt')
-        # tensorboard_logs_path =
-        # tensorboard_callback = Trainer._get_tensorboard_callback()
-        # print(f'starting training...\n'
-        #       f'checkpoints will be saved in: {checkpoint_dir_path}\n'
-        #       f'tensorboard logs will be saved in: {}')
-        # cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
-        #                                                  save_weights_only=True,
-        #                                                  verbose=1)
-        # multivariate_X, multivariate_y = dataset.get_multivariate_X_and_y()
-        #
-        # kf = Trainer._get_kfold()
-        # history_of_all_folds = []
-        # for train_idx, valid_idx in kf.split(X=multivariate_X):
-        #     train_X, train_y = multivariate_X[train_idx], multivariate_y[train_idx]
-        #     valid_X, valid_y = multivariate_X[valid_idx], multivariate_y[valid_idx]
-        #     train_dataset = tf.data.Dataset.from_tensor_slices((train_X, train_y)) \
-        #                                    .cache() \
-        #                                    .shuffle(settings.TrainingConfiguration.BATCH_SIZE) \
-        #                                    .batch(settings.TrainingConfiguration.BATCH_SIZE) \
-        #                                    .repeat()
-        #     valid_dataset = tf.data.Dataset.from_tensor_slices((valid_X, valid_y)) \
-        #                                    .batch(settings.TrainingConfiguration.BATCH_SIZE) \
-        #                                    .repeat()
-        #     history = self._predictor.nn.fit(train_dataset,
-        #                                      # batch_size=settings.TrainingConfiguration.BATCH_SIZE,
-        #                                      epochs=num_of_epochs,
-        #                                      validation_data=valid_dataset,
-        #                                      verbose=1,
-        #                                      callbacks=[cp_callback],
-        #                                      steps_per_epoch=settings.TrainingConfiguration.STEPS_PER_EPOCH,
-        #                                      validation_steps=settings.TrainingConfiguration.VALIDATION_STEPS)
-        #     history_of_all_folds.append(history)
         fitter = Fitter(predictor=self._predictor, dataset=dataset, num_of_epochs=num_of_epochs)
         history_of_all_folds = fitter.fit()
         return history_of_all_folds
-
-    # @staticmethod
-    # def _generate_a_new_training_dir_name() -> str:
-    #     return '{date:%Y-%m-%d_%H_%M_%S}'.format(date=datetime.datetime.now())
-
-    # @staticmethod
-    # def _get_kfold() -> stats.KFold:
-    #     return KFold(n_splits=settings.TrainingConfiguration.CROSS_VALIDATION_NUM_OF_FOLDS, shuffle=True)
-    #
-    # @staticmethod
-    # def _get_tensorboard_callback(log_dir: str) -> tf.keras.callbacks.TensorBoard:
-    #     return tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
     @staticmethod
     def plot_history(history: tf.keras.callbacks.History) -> None:
@@ -467,7 +418,6 @@ class Trainer:
         plt.title('Loss history')
         plt.legend()
         plt.show()
-
 
 # class _Loss:
 #     def __init__(self, y_true: pd.DataFrame, y_pred: pd.DataFrame):

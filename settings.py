@@ -14,6 +14,7 @@ class Files:
     PROCESSED_DATASET_MEALS_FILENAME = 'ProcessedMeals.csv'
 
     LOGS_DIR_NAME = 'logs'
+    SAVED_MODEL_DIR_NAME = 'model'
     CHECKPOINTS_DIR_NAME = 'checkpoints'
     FIT_HISTORY_DIR_NAME = 'fit_history'
 
@@ -28,7 +29,7 @@ class DataStructure:
 class DataStructureGlucose(DataStructure):
     SAMPLING_INTERVAL_IN_MINUTES = 15
     GLUCOSE_VALUE_HEADER = 'GlucoseValue'
-    GLUCOSE_CORRELATED_FEATURES = ['weight', 'carbohydrate_g', 'energy_kcal', 'totallipid_g']
+    GLUCOSE_CORRELATED_FEATURES = ['weight', 'carbohydrate_g', 'energy_kcal', 'totallipid_g', 'caffeine_mg']
 
 
 class DataStructureMeals(DataStructure):
@@ -42,8 +43,6 @@ class Challenge:
 
 class NN:
     MODEL = tf.keras.models.Sequential([
-        # tf.keras.layers.LSTM(32, activation='relu', return_sequences=True, input_shape=(49, 7)),
-        # tf.keras.layers.LSTM(16, activation='relu'),
         tf.keras.layers.LSTM(32, return_sequences=True, input_shape=(49, 7)),
         tf.keras.layers.BatchNormalization(),
         tf.keras.layers.LSTM(16, dropout=.1),
@@ -54,8 +53,8 @@ class NN:
     LOSS = 'mse'
 
     class BEST:
-        LOGS_DIR_NAME = '2020-03-17_22_40_40'
-        CHECKPOINT_NUM = None
+        LOGS_DIR_NAME = 'best_model'
+        CHECKPOINT_NUM = 17
 
 
 class TrainingConfiguration:
