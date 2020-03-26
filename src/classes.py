@@ -319,8 +319,8 @@ class Predictor:
     def _load_model(self, logs_dir_name: str):
         with self._strategy.scope():
             self.nn = tf.keras.models.load_model(os.path.join(settings.Files.LOGS_DIR_NAME,
-                                                          logs_dir_name,
-                                                          settings.Files.SAVED_MODEL_DIR_NAME))
+                                                              logs_dir_name,
+                                                              settings.Files.SAVED_MODEL_DIR_NAME))
 
     def _load_weights(self, logs_dir_name: str, checkpoint_num: Optional[int] = None) -> None:
         checkpoint_dir = os.path.join(settings.Files.LOGS_DIR_NAME,
