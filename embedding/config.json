@@ -6,8 +6,8 @@
           3553,
           3
       ],
-      "tensorPath": "https://gist.githubusercontent.com/korakot/c480edd1fcf7e02c49ccddbf5ac43fb9/raw/20e671b8b4ac8ebdcb24fc0f506914b64fd0754e/tensors.tsv",
-      "metadataPath": "https://gist.githubusercontent.com/mbostock/3887118/raw/8280f604be39edc753c6f426cc76da6848ab715f/data.tsv"
+      "tensorPath": "https://raw.githubusercontent.com/keyboardAnt/wis-glucose-challenge/master/embedding/food_data_tsne.tsv",
+      "metadataPath": "https://raw.githubusercontent.com/keyboardAnt/wis-glucose-challenge/master/embedding/food_labels.tsv"
     }
   ]
 }
