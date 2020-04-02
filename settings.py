@@ -6,8 +6,8 @@ class Files:
     DATA_DIR_PATH = 'data'
 
     RAW_DATA_DIR_NAME = 'raw'
-    RAW_GLUCOSE_FILENAME = 'GlucoseValues.csv'
-    RAW_MEALS_FILENAME = 'Meals.csv'
+    RAW_GLUCOSE_FILENAME = 'test_GlucoseValues.csv' #'GlucoseValues.csv'
+    RAW_MEALS_FILENAME = 'test_Meals.csv' #'Meals.csv'
     FOOD_NAMES_FILENAME = 'food_names.csv'
 
     PROCESSED_DATA_DIR_NAME = 'processed'
@@ -23,7 +23,7 @@ class Files:
 
 class DataStructure:
     INDEX_COLUMNS = [0, 1]
-    ID_HEADER = 'id'
+    ID_HEADER = 'RegistrationCode' #'id'
     DATE_HEADER = 'Date'
     FOOD_ID_HEADER = 'food_id'
     HEADERS_WITH_DATES = [DATE_HEADER]
