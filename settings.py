@@ -11,7 +11,7 @@ class Files:
     FOOD_NAMES_FILENAME = 'food_names.csv'
 
     PROCESSED_DATA_DIR_NAME = 'processed'
-    PROCESSED_DATASET_X_FILENAME = 'ProcessedX.csv'
+    PROCESSED_DATASET_X_FILENAME = 'test_ProcessedX.csv'
     PROCESSED_DATASET_GLUCOSE_FILENAME = 'ProcessedGlucoseValues.csv'
     PROCESSED_DATASET_MEALS_FILENAME = 'ProcessedMeals.csv'
 

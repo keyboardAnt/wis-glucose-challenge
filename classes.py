@@ -257,36 +257,46 @@ class DatasetX(Dataset):
         meals_df = meals_dataset.get_processed()
         self._raw = pd.concat([glucose_df, meals_df], axis=1, join='outer').sort_index()
 
-    def get_multivariate_X_and_y(self,
-                                 num_of_past_timepoints: int = 48,
-                                 num_of_future_timepoints: int = 8) \
-            -> Sequence[Tuple[np.ndarray, np.ndarray]]:
+    def get_multivariate_X_and_y_true(
+            self,
+            num_of_past_timepoints: int = settings.Challenge.NUM_OF_PAST_TIMEPOINTS,
+            num_of_future_timepoints: int = settings.Challenge.NUM_OF_FUTURE_TIMEPOINTS
+    ) \
+            -> Sequence[Tuple[np.ndarray, pd.DataFrame]]: # -> Sequence[Tuple[np.ndarray, np.ndarray]]:
         """
         Returns a 2-tuple of 3D np.ndarray with the following shapes:
-        X's shape is (# of instances in the dataset, # past timepoints + 1, # of features),
-        y's shape is (# of future timepoints, 1).
+        X's shape is (# of instances in the dataset,
+                      # past timepoints + 1,
+                      # of features),
+        y's shape is (# of instances in the dataset,
+                      # of future timepoints).
         """
         shifted_X = self.get_processed()
         shifted_X_copy = shifted_X.copy()
         num_of_instances = shifted_X.shape[0]
         num_of_features = shifted_X.shape[1]
-
         multivariate_X = np.zeros((num_of_instances,
                                    num_of_past_timepoints + 1,
                                    num_of_features))
-        multivariate_y = np.zeros((num_of_instances,
-                                   num_of_future_timepoints))
+        y_true = np.zeros((num_of_instances,
+                           num_of_future_timepoints))
         multivariate_X[:, 0, :] = shifted_X.groupby(level=0).shift(0)
         for i in range(1, num_of_past_timepoints + 1):
             shifted_X = shifted_X.groupby(level=0).shift(1)
             multivariate_X[:, i, :] = shifted_X
         indices_to_keep = ~np.isnan(multivariate_X).any(axis=(1, 2))
-        shifted_X = shifted_X_copy[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER] # self.get_processed()[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER]
+        shifted_X = shifted_X_copy[settings.DataStructureGlucose.GLUCOSE_VALUE_HEADER]
         for i in range(num_of_future_timepoints):
             shifted_X = shifted_X.groupby(level=0).shift(-1)
-            multivariate_y[:, i] = shifted_X
-        indices_to_keep = np.logical_and(indices_to_keep, ~np.isnan(multivariate_y).any(axis=1))
-        return multivariate_X[indices_to_keep], multivariate_y[indices_to_keep]
+            y_true[:, i] = shifted_X
+        indices_to_keep = np.logical_and(indices_to_keep, ~np.isnan(y_true).any(axis=1))
+        multivariate_X, y_true = multivariate_X[indices_to_keep], y_true[indices_to_keep]
+        ids = shifted_X.index[indices_to_keep]
+        y_true = pd.DataFrame(
+            y_true,
+            index=ids
+        )
+        return multivariate_X, y_true
 
 
 class Predictor:
@@ -294,6 +304,17 @@ class Predictor:
         self._strategy = tf.distribute.MirroredStrategy()
         self.nn = None
         self.reset()
+
+    def _predict(
+            self,
+            multivariate_X: np.ndarray,
+            multi_index: pd.MultiIndex
+    ) -> pd.DataFrame:
+        y_pred = self.nn.predict(multivariate_X)
+        return pd.DataFrame(
+            y_pred,
+            index=multi_index
+        )
 
     def predict(self, X_glucose: pd.DataFrame, X_meals: pd.DataFrame) -> pd.DataFrame:
         self.load(settings.NN.BEST.LOGS_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
@@ -307,9 +328,12 @@ class Predictor:
         dataset.build_raw_X_from_glucose_and_meals_datasets(glucose_dataset=glucose_dataset,
                                                             meals_dataset=meals_dataset)
         dataset.process(DataProcessorX)
-        multivariate_X, _ = dataset.get_multivariate_X_and_y()
+        multivariate_X, multivariate_y = dataset.get_multivariate_X_and_y_true()
         self.load(settings.NN.BEST.LOGS_DIR_NAME, settings.NN.BEST.CHECKPOINT_NUM)
-        return self.nn.predict(multivariate_X)
+        return self._predict(
+            multivariate_X,
+            multi_index=multivariate_y.index
+        )
 
     def load(self, logs_dir_name: str, checkpoint_num: Optional[int] = None) -> None:
         self._load_model(logs_dir_name)
@@ -365,7 +389,8 @@ class Fitter:
         print(self._get_message_about_paths())
         tensorboard_callback = self._get_tensorboard_callback()
         cp_callback = self._get_checkpoint_callback()
-        multivariate_X, multivariate_y = self._dataset.get_multivariate_X_and_y()
+        multivariate_X, multivariate_y = self._dataset.get_multivariate_X_and_y_true()
+        multivariate_X, multivariate_y = multivariate_X.values, multivariate_y.values
         kf = Fitter._get_kfold()
         history_of_all_folds = []
         for train_idx, valid_idx in kf.split(X=multivariate_X):

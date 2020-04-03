@@ -36,13 +36,87 @@ def compute_mean_pearson(
 
 
 if __name__ == "__main__":
-    raw_data_dir_path = os.path.join(settings.Files.DATA_DIR_PATH, settings.Files.RAW_DATA_DIR_NAME)
-    glucose_dataset = Dataset()
-    glucose_dataset.load_raw(settings.Files.RAW_GLUCOSE_FILENAME, raw_data_dir_path)
-    meals_dataset = Dataset()
-    meals_dataset.load_raw(settings.Files.RAW_MEALS_FILENAME, raw_data_dir_path)
+    # Paths
+    # raw_data_dir_path = os.path.join(
+    #     settings.Files.DATA_DIR_PATH,
+    #     settings.Files.RAW_DATA_DIR_NAME
+    # )
+    processed_data_dir_path = os.path.join(
+        settings.Files.DATA_DIR_PATH,
+        settings.Files.PROCESSED_DATA_DIR_NAME
+    )
+    # # Load & process datasets
+    # # Glucose
+    # glucose_dataset = Dataset()
+    # glucose_dataset.load_raw(
+    #     settings.Files.RAW_GLUCOSE_FILENAME,
+    #     raw_data_dir_path
+    # )
+    # glucose_dataset.process(DataProcessorGlucose)
+    # # Meals
+    # meals_dataset = Dataset()
+    # meals_dataset.load_raw(
+    #     settings.Files.RAW_MEALS_FILENAME,
+    #     raw_data_dir_path
+    # )
+    # meals_dataset.process(DataProcessorMeals)
+    #
+    # # NOTE: It's possible to predict by calling to `predictor.predict`
+    # # y_pred = predictor.predict(X_glucose=glucose_dataset.get_raw(),
+    # #                            X_meals=meals_dataset.get_raw())
+
+    # # Build & process datasetX
+    dataset = DatasetX()
+    # dataset.build_raw_X_from_glucose_and_meals_datasets(
+    #     glucose_dataset=glucose_dataset,
+    #     meals_dataset=meals_dataset
+    # )
+    # dataset.process(DataProcessorX)
+    # # Store processed
+    # dataset.save_processed(
+    #     settings.Files.PROCESSED_DATASET_X_FILENAME,
+    #     processed_data_dir_path
+    # )
+    dataset.load_processed(
+        settings.Files.PROCESSED_DATASET_X_FILENAME,
+        processed_data_dir_path
+    )
+    print(
+        'dataset.get_processed_shape()',
+        dataset.get_processed_shape()
+    )
+    # Load best predictor model
     predictor = Predictor()
-    y_pred = predictor.predict(X_glucose=glucose_dataset.get_raw(),
-                               X_meals=meals_dataset.get_raw())
+    predictor.load(
+        settings.NN.BEST.LOGS_DIR_NAME,
+        settings.NN.BEST.CHECKPOINT_NUM
+    )
+    # Predict & store
+    multivariate_X, y_true = dataset.get_multivariate_X_and_y_true()
+    # y_true = pd.DataFrame(y_true)
+    print('y_true')
+    print(y_true)
+    y_true.to_csv(
+        'y_true.csv',
+        header=False,
+        index=False
+    )
+    # y_true = pd.read_csv('y_true.csv', header=None)
+    y_pred = predictor._predict(multivariate_X, multi_index=y_true.index)
+    print('y_pred')
     print(y_pred)
-    # compute_mean_pearson(y_true=y_, y_pred=y_pred)
+    y_pred.to_csv(
+        'y_pred.csv',
+        header=False,
+        index=False
+    )
+    # y_pred = pd.read_csv('y_pred.csv', header=None)
+    # Evaluate
+    mean_pearson = compute_mean_pearson(
+        y_true=y_true,
+        y_pred=y_pred
+    )
+    print(
+        'mean_pearson',
+        mean_pearson
+    )
